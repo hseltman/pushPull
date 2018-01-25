@@ -62,7 +62,7 @@ setup = function() {
   }
   
   # Put main code in "~"
-  codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master/pushPull.R"
+  codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master"
   code = try(readLines(codeLoc), silent=TRUE)
   if (is(code, "try-error")) {
     stop("Failed to load pushPull.R code from github")
