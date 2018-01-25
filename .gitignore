@@ -24,3 +24,7 @@ vignettes/*.pdf
 *.knit.md
 .Rproj.user
 pushPull.Rproj
+.spyproject
+hello.txt
+low.txt
+ytpme.txt
