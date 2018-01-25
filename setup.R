@@ -62,12 +62,12 @@ setup = function() {
   }
   
   # Put main code in "~"
-  codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master"
+  codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master/pushPull.R"
   code = try(readLines(codeLoc), silent=TRUE)
   if (is(code, "try-error")) {
     stop("Failed to load pushPull.R code from github")
   }
-  rname = path.expand(file.path(codeLoc, "pushPull.R"))
+  rname = path.expand(file.path("~", "pushPull.R"))
   msg = try(write(code, rname), silent=TRUE)
   if (is(msg, "try-error")) {
     stop("cannot write ", rname)
