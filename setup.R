@@ -2,8 +2,9 @@
 # 
 # This is the setup function for "pushPull".  See pushPull.R for details.
 
-# One-time setup usage:
+# One-time setup usage in R (setup in R also sets up for other languages):
 # source("https://raw.githubusercontent.com/hseltman/pushPull/master/setup.R")
+# setup()
 
 # Setup asks the user for the name of the common sftp site, the sftp username,
 # the sftp password, and the users id, and stores thwaw under ~/pushPullConfig.csv.
