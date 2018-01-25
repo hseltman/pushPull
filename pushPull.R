@@ -55,7 +55,7 @@
 push = function(files) {
   if (length(files) == 0 || !is.character(files))
     stop("'files' must be a string vector")
-  
+
   # get sftp info from config (or tell user how to run setup)
   fname = path.expand(file.path("~", "pushPullConfig.csv"))
   if (!file.exists(fname) ||
