@@ -11,8 +11,23 @@
 # Future use of push() or pull() from pushPull.R will read this configuration info.
 # Any push() or pull() functions in other languages should read the same config.
 
+# Setup also store pushPull.R and pushPull.py in the users "~" folder.
+
+# Problem: on Windows, "~" expands differently in R and Python!!
+# Solution: maintain two copies of the configuration file
+
 setup = function() {
-  setupName = path.expand(file.path("~", "pushPullConfig.csv"))
+  userHome = path.expand("~")
+  if (Sys.info()["sysname"] == "Windows") {
+    parts = strsplit(userHome, "[/\\]")[[1]]
+    nparts = length(parts)
+    if (parts[nparts] == "Documents") {
+      # Python and duplicate setup location
+      userHome2 = do.call(file.path, as.list(parts[1:(nparts-1)]))
+      setupName2 = file.path(userHome2, "pushPullConfig.csv")
+    }
+  }
+  setupName = file.path(userHome, "pushPullConfig.csv")
   
   # Get old values if any
   sftpSite = NULL
@@ -60,21 +75,44 @@ setup = function() {
   if (is(w, "try-error")) {
     stop("Cannot write to ", setupName)
   }
+  if (exists("setupName2")) {
+    w = try(write.csv(dtf, setupName2, quote=FALSE, row.names=FALSE), silent=TRUE)
+    if (is(w, "try-error")) {
+      stop("Cannot write to ", setupName2)
+    }
+  }
   
-  # Put main code in "~"
+  # Put main R code in userHome
   codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master/pushPull.R"
-  code = try(readLines(codeLoc), silent=TRUE)
-  if (is(code, "try-error")) {
+  rCode = try(readLines(codeLoc), silent=TRUE)
+  if (is(rCode, "try-error")) {
     stop("Failed to load pushPull.R code from github")
   }
-  rname = path.expand(file.path("~", "pushPull.R"))
-  msg = try(write(code, rname), silent=TRUE)
+  rName = file.path(userHome, "pushPull.R")
+  msg = try(write(rCode, rName), silent=TRUE)
   if (is(msg, "try-error")) {
-    stop("cannot write ", rname)
+    stop("cannot write ", rName)
+  }
+  
+  # Put main Python code in userHome(2)
+  codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master/pushPull.py"
+  pCode = try(readLines(codeLoc), silent=TRUE)
+  if (is(pCode, "try-error")) {
+    stop("Failed to load pushPull.py code from github")
+  }
+  pythonHome = if (exists("userHome2")) userHome2 else userHome
+  pName = file.path(pythonHome, "pushPull.py")
+  msg = try(write(pCode, pName), silent=TRUE)
+  if (is(msg, "try-error")) {
+    stop("cannot write ", pName)
   }
   
   # Report success
-  cat("Successfully wrote", basename(setupName), "and", basename(rname),
-      "to", path.expand("~"))
+  cat("Successfully wrote", basename(setupName), "and", basename(rName),
+      "to", userHome, "\n")
+  if (exists("userHome2")) {
+    cat("Successfully wrote", basename(setupName), "to", userHome2, "\n")
+  }
+  cat("Successfully wrote", basename(pythonHome), "to", pythonHome, "\n")
   invisible(NULL)
 }
