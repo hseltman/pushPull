@@ -75,6 +75,6 @@ setup = function() {
   
   # Report success
   cat("Successfully wrote", basename(setupName), "and", basename(rname),
-      "to", expand.path("~"))
+      "to", path.expand("~"))
   invisible(NULL)
 }
