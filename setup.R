@@ -94,13 +94,17 @@ setup = function() {
     stop("cannot write ", rName)
   }
   
-  # Put main Python code in userHome(2)
+  # Put main Python code in python path, defaulting to userHome(2)/.ipython
   codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master/pushPull.py"
   pCode = try(readLines(codeLoc), silent=TRUE)
   if (is(pCode, "try-error")) {
     stop("Failed to load pushPull.py code from github")
   }
   pythonHome = if (exists("userHome2")) userHome2 else userHome
+  ipythonHome = file.path(pythonHome, ".ipython")
+  hasIpython = file.info(ipythonHome)$isdir
+  if (hasIpython) pythonHome = ipythonHome
+  pythonHome = ask("Store Python module in", pythonHome)
   pName = file.path(pythonHome, "pushPull.py")
   msg = try(write(pCode, pName), silent=TRUE)
   if (is(msg, "try-error")) {
@@ -108,11 +112,10 @@ setup = function() {
   }
   
   # Report success
-  cat("Successfully wrote", basename(setupName), "and", basename(rName),
-      "to", userHome, "\n")
+  cat("Successfully wrote setup.csv and pushPull.R to", userHome, "\n")
   if (exists("userHome2")) {
-    cat("Successfully wrote", basename(setupName), "to", userHome2, "\n")
+    cat("Successfully wrote setup.csv to", userHome2, "\n")
   }
-  cat("Successfully wrote", basename(pythonHome), "to", pythonHome, "\n")
+  cat("Successfully wrote pushPull.py to", pythonHome, "\n")
   invisible(NULL)
 }
