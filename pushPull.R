@@ -84,7 +84,7 @@ push = function(files) {
   }
   
   # Upload files
-  if (!require(RCurl))
+  if (!require(RCurl, quietly=TRUE, warn.conflicts=FALSE))
     stop("install 'RCurl' and try again")
   front = paste0("sftp://", sftpName, ":", sftpPassword, "@", sftpSite)
   opts = list(ftp.create.missing.dirs=TRUE)
@@ -130,7 +130,7 @@ pull = function(files, who=NULL) {
   }
 
   # Download files
-  if (!require(RCurl))
+  if (!require(RCurl, quietly=TRUE, warn.conflicts=FALSE))
     stop("install 'RCurl' and try again")
   front = paste0("sftp://", sftpName, ":", sftpPassword, "@", sftpSite)
   opts = list(ftp.create.missing.dirs=TRUE)
