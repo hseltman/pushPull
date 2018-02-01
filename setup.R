@@ -2,40 +2,84 @@
 # 
 # This is the setup function for "pushPull".  See pushPull.R for details.
 
+# One-time setup for Python (or R on a Mac; see below):
+#    conda install -c conda-forge pysftp
+# (or if that fails: pip install pysftp)
+
 # One-time setup usage in R (setup in R also sets up for other languages):
 # source("https://raw.githubusercontent.com/hseltman/pushPull/master/setup.R")
 # setup()
 
-# Setup asks the user for the name of the common sftp site, the sftp username,
-# the sftp password, and the users id, and stores thwaw under ~/pushPullConfig.csv.
-# Future use of push() or pull() from pushPull.R will read this configuration info.
-# Any push() or pull() functions in other languages should read the same config.
+# setup() asks the user for the name of the common sftp site, the sftp username,
+# the sftp password, and the users id, and stores that under ~/pushPullConfig.csv.
+# Setup also store pushPull.R and pushPull.py in an appropriate place (see below)
+# on the user's computer.
 
-# Setup also store pushPull.R and pushPull.py in the users "~" folder.
+# In a future R session, the user runs "source("~/pushPull.R") to load
+# the push() and pull() functions.
+
+# In a future Python session, the user runs "import PushPull" to load push()
+# and pull() from pushPull.py.
 
 # Problem: on Windows, "~" expands differently in R and Python!!
-# Solution: maintain two copies of the configuration file
+# Solution:
+#   Normally (Mac and Windows Python), use Sys.getenv("HOME") as
+#   the location of the config file and code.
+#
+#   On Windows, if "Documents" ends the path, drop it for the path for
+#   Python
+
+# Problem: We would like a user to type only "from pushPull import push, pull",
+#   but sys.path is not very predictable across operating systems.
+# Solution: Set PYTHONPATH to include $HOME and place pushPull.py there.
+#   To make this permanent, use "setx" on Windows (probably requires admin
+#   privileges).  On a Mac, edit .bash_profile to contain
+#     if [ -f ~/.bashrc ]; then
+#        source ~/.bashrc
+#     fi
+#   and in ~/.bashrc include:
+#     export PYTHONPATH=/my/homePath
+
+# Problem: Spyder on a Mac ignores PYTHONPATH.
+# Solution: Also place pushPull.py in $HOME/.ipython if it exists.
+
+# Problem: On a Mac (High Sierra) as of January 2018 "sftp" works from
+#   the command prompt, and pysftp allows Python to run sftp, but from
+#   the R "RCurl" package, sftp is not available (as shown with 
+#    curlVersion()$protocols).  Supposedly the problem is that the
+#   "libcurl" program installed on the Mac does not support sftp
+#   (http://andrewberls.com/blog/post/adding-sftp-support-to-curl),
+#   but checking "curl -V" at the terminal prompt does show sftp to be active.
+# Solution:
+#   On a Mac have R just run a script that passes the file name to
+#   push() or pull() in Python.  This is much simpler than having the
+#   user do a recompilation of libcurl2.
+
+# References:
+# https://ss64.com/nt/setx.html
+# https://anaconda.org/conda-forge/pysftp
+# http://www.joshstaiger.org/archives/2005/07/bash_profile_vs.html
+
 
 setup = function() {
-  userHome = path.expand("~")
-  if (Sys.info()["sysname"] == "Windows") {
-    parts = strsplit(userHome, "[/\\]")[[1]]
-    nparts = length(parts)
-    if (parts[nparts] == "Documents") {
-      # Python and duplicate setup location
-      userHome2 = do.call(file.path, as.list(parts[1:(nparts-1)]))
-      setupName2 = file.path(userHome2, "pushPullConfig.csv")
+  rHome = home = Sys.getenv("HOME")
+  if (home == "") stop("Environmental variable 'HOME' is undefined")
+  onWindows = Sys.info()["sysname"] == "Windows"
+  if (onWindows) {
+    if (grepl("/Documents$", home)) {
+      home = substring(home, 1, nchar(home) - 10)
     }
   }
-  setupName = file.path(userHome, "pushPullConfig.csv")
-  
+  setupFile = file.path(home, "pushPullConfig.csv")
+  rSetupFile = file.path(rHome, "pushPullConfig.csv")
+
   # Get old values if any
   sftpSite = NULL
   sftpName = NULL
   sftpPassword = NULL
   userName = NULL
-  if (file.exists(setupName)) {
-    dtf = try(read.csv(setupName, as.is=TRUE), silent=TRUE)
+  if (file.exists(rSetupFile)) {
+    dtf = try(read.csv(rSetupFile, as.is=TRUE), silent=TRUE)
     if (is(dtf, "data.frame")) {
       if (all(c("key", "value") %in% names(dtf))) {
         sftpSite = dtf[dtf$key=="sftpSite", "value"]
@@ -43,10 +87,10 @@ setup = function() {
         sftpPassword = dtf[dtf$key=="sftpPassword", "value"]
         userName = dtf[dtf$key=="userName", "value"]
       } else {
-        warning(setupName, " is a csv file, but is missing 'key' and/or 'value'")
+        warning(rSetupFile, " is a csv file, but is missing 'key' and/or 'value'")
       }
     } else {
-      warning(setupName, " exists, but is not in csv format")
+      warning(rSetupFile, " exists, but is not in csv format")
     }
   }
 
@@ -71,51 +115,171 @@ setup = function() {
   # Store values in configuration file
   dtf = data.frame(key = c("sftpSite", "sftpName", "sftpPassword", "userName"),
                    value = c(sftpSite, sftpName, sftpPassword, userName))
-  w = try(write.csv(dtf, setupName, quote=FALSE, row.names=FALSE), silent=TRUE)
+  w = try(write.csv(dtf, rSetupFile, quote=FALSE, row.names=FALSE), silent=TRUE)
   if (is(w, "try-error")) {
-    stop("Cannot write to ", setupName)
+    stop("Cannot write to ", rSetupFile)
   }
-  if (exists("setupName2")) {
-    w = try(write.csv(dtf, setupName2, quote=FALSE, row.names=FALSE), silent=TRUE)
+  if (setupFile != rSetupFile) {
+    w = try(write.csv(dtf, rSetupFile, quote=FALSE, row.names=FALSE), silent=TRUE)
     if (is(w, "try-error")) {
-      stop("Cannot write to ", setupName2)
+      stop("Cannot write to ", rSetupFile)
     }
   }
   
-  # Put main R code in userHome
+  # Put main R code in user's home folder(s)
   codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master/pushPull.R"
-  rCode = try(readLines(codeLoc), silent=TRUE)
+  rCode = try(suppressWarnings(readLines(codeLoc, warn=FALSE)), silent=TRUE)
   if (is(rCode, "try-error")) {
     stop("Failed to load pushPull.R code from github")
   }
-  rName = file.path(userHome, "pushPull.R")
+  rName = file.path(rHome, "pushPull.R")
   msg = try(write(rCode, rName), silent=TRUE)
   if (is(msg, "try-error")) {
     stop("cannot write ", rName)
   }
   
-  # Put main Python code in python path, defaulting to userHome(2)/.ipython
+  # Get main Python code
   codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master/pushPull.py"
-  pCode = try(readLines(codeLoc), silent=TRUE)
+  pCode = try(suppressWarnings(readLines(codeLoc, warn=FALSE)), silent=TRUE)
   if (is(pCode, "try-error")) {
     stop("Failed to load pushPull.py code from github")
   }
-  pythonHome = if (exists("userHome2")) userHome2 else userHome
-  ipythonHome = file.path(pythonHome, ".ipython")
-  hasIpython = file.info(ipythonHome)$isdir
-  if (hasIpython) pythonHome = ipythonHome
-  pythonHome = ask("Store Python module in", pythonHome)
-  pName = file.path(pythonHome, "pushPull.py")
+  
+  # Put the code in the user's home folder and any .ipython subfolder
+  # (because Spyder does not read PYTHONPATH, but does add the .ipython
+  # folder to its module path (sys.path)).
+  pName = file.path(home, "pushPull.py")
   msg = try(write(pCode, pName), silent=TRUE)
   if (is(msg, "try-error")) {
     stop("cannot write ", pName)
   }
-  
-  # Report success
-  cat("Successfully wrote setup.csv and pushPull.R to", userHome, "\n")
-  if (exists("userHome2")) {
-    cat("Successfully wrote setup.csv to", userHome2, "\n")
+  iPName = file.path(pName, ".ipython")
+  if (file.exists(iPName)) {
+    msg = try(write(pCode, iPName), silent=TRUE)
+    if (is(msg, "try-error")) {
+      stop("cannot write ", iPName)
+    }
   }
-  cat("Successfully wrote pushPull.py to", pythonHome, "\n")
+
+  # Set the PYTHONPATH (if not already there) so that the pushPull module
+  # is accessable from Python started outside of Anaconda.
+  oldPythonPath = Sys.getenv("PYTHONPATH")
+  pythonPath = NULL
+  if (oldPythonPath == "") {
+    pythonPath = home
+  } else {
+    pps = strsplit(oldPythonPath, ";")[[1]]
+    if (!any(grepl(home, pps))) {
+      pythonPath = paste0(home, ";", oldPythonPath)
+    }
+  }
+  if (!is.null(pythonPath)) {
+    if (onWindows) {
+      rtn = try(shell(paste("setx PYTHONPATH", pythonPath), intern=TRUE),
+                silent=TRUE)
+      if (is(rtn, "try-error")) {
+        warning("PYTHONPATH was not set: ", as.character(attr(rtn, "CONDITION")))
+      }
+    # Mac setup
+    } else {
+      bpFile = file.path(home, ".bash_profile")
+      bpt = try(suppressWarnings(readLines(bpFile, warn=FALSE)), silent=TRUE)
+      sourceBashProfileText = c("if [ -f ~/.bashrc ]; then",
+                                "  source ~/.bashrc",
+                                "fi")
+      bashProfileText = sourceBashProfileText
+      needWrite = TRUE
+      if (!is(bpt, "try-error")) {
+        if (any(grepl("[.]bashrc", bpt))) {
+          needWrite = FALSE
+        } else {
+          bashProfileText = c(bpt, "\n\n", sourceBashProfileText)
+        }
+      }
+      if (needWrite) {
+        rtn = try(write(bashProfileText, bpFile), silent=TRUE)
+        if (is(rtn, "try-error")) {
+          warning("Cannot write ", bpFile, ": ", as.character(attr(rtn, "CONDITION")))
+          print("'import pushPull' in Python may not work")
+        }
+        rtn = system(paste0("chmod u+x ", bpFile))
+        if (is(rtn, "try-error")) {
+          warning("Cannot set to executable: ", bpFile, ": ",
+                  as.character(attr(rtn, "CONDITION")))
+          print("'import pushPull' in Python may not work")
+        }
+      }
+      #
+      brcFile = file.path(home, ".bashrc")
+      brct = try(suppressWarnings(readLines(brcFile, warn=FALSE)), silent=TRUE)
+      sourceBashrcText = paste0("export PYTHONPATH=", home)
+      bashrcText = sourceBashrcText
+      needWrite = TRUE
+      newExport = NULL
+      # Handle case where old .bashrc text is present
+      if (!is(brct, "try-error")) {
+        # Declare defeat if more than one line has "export ...PYTHONPATH"
+        exports = grep("^\\s*export", brct)
+        PP = grep("PYTHONPATH\\s*=", brct, ignore.case=TRUE)
+        expPP = intersect(exports, PP)
+        if (length(expPP) > 1) {
+          stop("PYTHONPATH is exported more than once in ", brcFile,
+               "\nFix it and then try setup() again.")
+        }
+        # Handle a .bashrc file without "export ... PYTHONPATH"
+        if (length(expPP) == 0) {
+          bashrcText = c(brct, "\n\n", sourceBashrcText)
+          newExport = sourceBashrcText
+        # Handle a .bashrc file with "export ... PYTHONPATH"
+        } else {
+          expLine = gsub("pythonpath", "PYTHONPATH", brct[expPP], ignore.case=TRUE)
+          ppLoc = regexpr("PYTHONPATH", expLine)
+          oldPaths = regmatches(expLine,
+                                regexpr("PYTHONPATH\\s*=\\s*.[^ ]+", expLine))
+          oldPaths = gsub("^PYTHONPATH\\s*=\\s*", "", oldPaths)
+          oldPaths = strsplit(oldPaths, ":")[[1]]
+          homeLoc = match(home, oldPaths)
+          if (is.na(homeLoc)) {
+            paths = paste(c(home, oldPaths), collapse=":")
+            bashrcText = brct
+            bashrcText[expPP] = paste0("export PYTHONPATH=", paths)
+            newExport = bashrcText[expPP]
+          } else {
+            needWrite = FALSE
+          }
+        }
+      }
+      # Write the new or modified .bashrc file
+      if (needWrite) {
+        rtn = try(write(bashrcText, brcFile), silent=TRUE)
+        if (is(rtn, "try-error")) {
+          warning("Cannot write ", brcFile, ": ",
+                  as.character(attr(rtn, "CONDITION")))
+          print("'import pushPull' in Python may not work")
+        }
+        rtn = system(paste0("chmod u+x ", brcFile))
+        if (is(rtn, "try-error")) {
+          warning("Cannot set to executable: ", brcFile, ": ",
+                  as.character(attr(rtn, "CONDITION")))
+          print("'import pushPull' in Python may not work")
+        }
+        if (is.null(newExport)) stop("programmer error 8373")
+        rtn = try(system(newExport), silent=TRUE)
+        if (is(rtn, "try-error")) {
+          warning("Cannot export PYTHONPATH: ",
+                  as.character(attr(rtn, "CONDITION")))
+          print("'import pushPull' in Python may not work")
+        }
+      }
+    }
+  }
+
+  # Report success
+  cat("Successfully wrote setup.csv and pushPull.R to", rHome, "\n")
+  if (home != rHome) {
+    cat("Successfully wrote setup.csv to", home, "\n")
+  }
+  cat("Successfully wrote pushPull.py to", home, "\n")
   invisible(NULL)
 }
+
