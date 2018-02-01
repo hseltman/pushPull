@@ -3,7 +3,8 @@ pushPull.py is the Python version of pushPull.R
 See pushPull.R and setup.R for a full overview.
 
 Python details:
-One time install: from operating system prompt run 'pip install pysftp'
+One time install: From the operating system prompt run either
+  'conda install -c conda-forge pysftp' or 'pip install pysftp',
 
 Reference: http://pysftp.readthedocs.io/en/release_0.2.9/cookbook.html
            #pysftp-connection-cd
