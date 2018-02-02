@@ -72,7 +72,7 @@ setup = function() {
   }
   setupFile = file.path(home, "pushPullConfig.csv")
   rSetupFile = file.path(rHome, "pushPullConfig.csv")
-
+  
   # Get old values if any
   sftpSite = NULL
   sftpName = NULL
@@ -93,7 +93,7 @@ setup = function() {
       warning(rSetupFile, " exists, but is not in csv format")
     }
   }
-
+  
   # Helper function to ask for input with a default (allows "QUIT")
   ask = function(prompt, default=NULL) {
     if (!is.null(default) && length(default)>0) {
@@ -105,13 +105,13 @@ setup = function() {
     if (!is.null(default) && rtn=="") rtn = default
     return(rtn)
   }
-
+  
   # Get new values for all parameters
   sftpSite = ask("sftp site [not including sftp://]", sftpSite)
   sftpName = ask("sftp login name", sftpName)
   sftpPassword = ask("sftp password", sftpPassword)
   userName = ask("Your user name", userName)
-
+  
   # Store values in configuration file
   dtf = data.frame(key = c("sftpSite", "sftpName", "sftpPassword", "userName"),
                    value = c(sftpSite, sftpName, sftpPassword, userName))
@@ -153,14 +153,15 @@ setup = function() {
   if (is(msg, "try-error")) {
     stop("cannot write ", pName)
   }
-  iPName = file.path(pName, ".ipython")
-  if (file.exists(iPName)) {
+  iPDir = file.path(home, ".ipython")
+  iPName = file.path(iPDir, "pushPull.py")
+  if (isTRUE(file.info(iPDir)$isdir)) {
     msg = try(write(pCode, iPName), silent=TRUE)
     if (is(msg, "try-error")) {
       stop("cannot write ", iPName)
     }
   }
-
+  
   # Set the PYTHONPATH (if not already there) so that the pushPull module
   # is accessable from Python started outside of Anaconda.
   oldPythonPath = Sys.getenv("PYTHONPATH")
@@ -180,7 +181,7 @@ setup = function() {
       if (is(rtn, "try-error")) {
         warning("PYTHONPATH was not set: ", as.character(attr(rtn, "CONDITION")))
       }
-    # Mac setup
+      # Mac setup
     } else {
       bpFile = file.path(home, ".bash_profile")
       bpt = try(suppressWarnings(readLines(bpFile, warn=FALSE)), silent=TRUE)
@@ -214,8 +215,8 @@ setup = function() {
       brct = try(suppressWarnings(readLines(brcFile, warn=FALSE)), silent=TRUE)
       sourceBashrcText = paste0("export PYTHONPATH=", home)
       bashrcText = sourceBashrcText
+      newExport = paste0("export PYTHONPATH=", home)
       needWrite = TRUE
-      newExport = NULL
       # Handle case where old .bashrc text is present
       if (!is(brct, "try-error")) {
         # Declare defeat if more than one line has "export ...PYTHONPATH"
@@ -229,8 +230,7 @@ setup = function() {
         # Handle a .bashrc file without "export ... PYTHONPATH"
         if (length(expPP) == 0) {
           bashrcText = c(brct, "\n\n", sourceBashrcText)
-          newExport = sourceBashrcText
-        # Handle a .bashrc file with "export ... PYTHONPATH"
+          # Handle a .bashrc file with "export ... PYTHONPATH"
         } else {
           expLine = gsub("pythonpath", "PYTHONPATH", brct[expPP], ignore.case=TRUE)
           ppLoc = regexpr("PYTHONPATH", expLine)
@@ -263,7 +263,6 @@ setup = function() {
                   as.character(attr(rtn, "CONDITION")))
           print("'import pushPull' in Python may not work")
         }
-        if (is.null(newExport)) stop("programmer error 8373")
         rtn = try(system(newExport), silent=TRUE)
         if (is(rtn, "try-error")) {
           warning("Cannot export PYTHONPATH: ",
@@ -273,7 +272,7 @@ setup = function() {
       }
     }
   }
-
+  
   # Report success
   cat("Successfully wrote setup.csv and pushPull.R to", rHome, "\n")
   if (home != rHome) {
