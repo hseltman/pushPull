@@ -360,7 +360,7 @@ setup = function() {
     cat("Successfully wrote setup.csv to", home, "\n")
   }
   cat("Successfully wrote pushPull.py to", home, "\n")
-  if (pushScript) cat("Successfully wrote", pushName) 
-  if (pullScript) cat("Successfully wrote", pullName) 
+  if (pushScript) cat("Successfully wrote", pushName, "\n") 
+  if (pullScript) cat("Successfully wrote", pullName, "\n") 
   invisible(NULL)
 }
