@@ -92,12 +92,12 @@ pull = function(files, who=NULL) {
     stop("No files in 'files'")
   }
   
-  # Fixup files (subdirectories must be through "who")
-  files = basename(files)
-  if (!is.null(who)) {
-    files = paste0(who, "/", files)
-  }
-
+  # # Fixup files (subdirectories must be through "who")
+  # files = basename(files)
+  # if (!is.null(who)) {
+  #   files = paste0(who, "/", files)
+  # }
+  # 
   # Download files
   for (f in files) {
     if (is.null(who)) { # Student pull from instructor (main folder)
