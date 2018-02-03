@@ -1,9 +1,9 @@
 # Push/pull project, Jan 2018, H. Seltman
 # 
-# This is the setup function for "pushPull".  See pushPull.R for details.
+# This is the setup function for "pushPull".  See pushPull.R for more details.
 
 # One-time setup for Python (or R on a Mac; see below):
-#    conda install -c conda-forge pysftp
+#    conda install -c conda-forge pysftp (as an administrator on Windows)
 # (or if that fails: pip install pysftp)
 
 # One-time setup usage in R (setup in R also sets up for other languages):
@@ -30,7 +30,7 @@
 #   Python
 
 # Problem: We would like a user to type only "from pushPull import push, pull",
-#   but sys.path is not very predictable across operating systems.
+#   but Python's sys.path is not very predictable across operating systems.
 # Solution: Set PYTHONPATH to include $HOME and place pushPull.py there.
 #   To make this permanent, use "setx" on Windows (probably requires admin
 #   privileges).  On a Mac, edit .bash_profile to contain
@@ -55,6 +55,16 @@
 #   push() or pull() in Python.  This is much simpler than having the
 #   user do a recompilation of libcurl2.
 
+# Problem: Running "system(cmd)" in R is not the same as running "cmd"
+#   at the operating system prompt.  On a Mac, one might find "which python"
+#   to be "/Users/hseltman/anaconda/bin/python" which runs Python 3 from R,
+#   but "/usr/bin/python" which runs Python 2 from the command prompt.
+#   The code in pushPull.py is written in Python 3, but from inside R we
+#   use system() to run the special pull.py and push.py scripts that execute
+#   the push() and pull() functions inside pushPull.py.
+# Solution: During setup, as the user if we have correctly identified the
+#   path to Python 3 (on a Mac only).
+
 # References:
 # https://ss64.com/nt/setx.html
 # https://anaconda.org/conda-forge/pysftp
@@ -64,8 +74,8 @@
 setup = function() {
   rHome = home = Sys.getenv("HOME")
   if (home == "") stop("Environmental variable 'HOME' is undefined")
-  onWindows = Sys.info()["sysname"] == "Windows"
-  if (onWindows) {
+  os = Sys.info()["sysname"]
+  if (os == "Windows") {
     if (grepl("/Documents$", home)) {
       home = substring(home, 1, nchar(home) - 10)
     }
@@ -78,6 +88,7 @@ setup = function() {
   sftpName = NULL
   sftpPassword = NULL
   userName = NULL
+  python3Path = NULL
   if (file.exists(rSetupFile)) {
     dtf = try(read.csv(rSetupFile, as.is=TRUE), silent=TRUE)
     if (is(dtf, "data.frame")) {
@@ -86,6 +97,7 @@ setup = function() {
         sftpName = dtf[dtf$key=="sftpName", "value"]
         sftpPassword = dtf[dtf$key=="sftpPassword", "value"]
         userName = dtf[dtf$key=="userName", "value"]
+        if (os == "Darwin") python3Path = dtf[dtf$key=="python3Path", "value"]
       } else {
         warning(rSetupFile, " is a csv file, but is missing 'key' and/or 'value'")
       }
@@ -111,10 +123,19 @@ setup = function() {
   sftpName = ask("sftp login name", sftpName)
   sftpPassword = ask("sftp password", sftpPassword)
   userName = ask("Your user name", userName)
+  if (os == "Darwin") {
+    if (is.null(python3Path)) python3Path = file.path(home, "anaconda/bin")
+    python3Path = ask("Path to Python 3", python3Path)
+  }
   
   # Store values in configuration file
-  dtf = data.frame(key = c("sftpSite", "sftpName", "sftpPassword", "userName"),
-                   value = c(sftpSite, sftpName, sftpPassword, userName))
+  key = c("sftpSite", "sftpName", "sftpPassword", "userName")
+  value = c(sftpSite, sftpName, sftpPassword, userName)
+  if (os == "Darwin") {
+    key = c(key, "python3Path")
+    value = c(value, python3Path)
+  }
+  dtf = data.frame(key = key, value = value)
   w = try(write.csv(dtf, rSetupFile, quote=FALSE, row.names=FALSE), silent=TRUE)
   if (is(w, "try-error")) {
     stop("Cannot write to ", rSetupFile)
@@ -127,7 +148,11 @@ setup = function() {
   }
   
   # Put main R code in user's home folder(s)
-  codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master/pushPull.R"
+  if (os == "Darwin") {
+    codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master/pushPullMac.R"
+  } else {
+    codeLoc = "https://raw.githubusercontent.com/hseltman/pushPull/master/pushPull.R"
+  }
   rCode = try(suppressWarnings(readLines(codeLoc, warn=FALSE)), silent=TRUE)
   if (is(rCode, "try-error")) {
     stop("Failed to load pushPull.R code from github")
@@ -175,7 +200,7 @@ setup = function() {
     }
   }
   if (!is.null(pythonPath)) {
-    if (onWindows) {
+    if (os == "Windows") {
       rtn = try(shell(paste("setx PYTHONPATH", pythonPath), intern=TRUE),
                 silent=TRUE)
       if (is(rtn, "try-error")) {
@@ -273,6 +298,50 @@ setup = function() {
     }
   }
   
+  # On a Mac create push.py and pull.py in the user's home directory
+  pushScript = FALSE
+  pullScript = FALSE
+  if (os == "Darwin") {
+    pullPy = c("#!/Users/hseltman/anaconda/bin/python",
+               "# This is pull.py from https://github.com/hseltman/pushPull",
+               " ", 
+               "import pushPull",
+               "import sys",
+               " ", 
+               "file = sys.argv[1]",
+               "pushPull.pull(file)")
+    pullPy = c("#!/Users/hseltman/anaconda/bin/python",
+               "# This is push.py from https://github.com/hseltman/pushPull",
+               " ", 
+               "import pushPull",
+               "import sys",
+               " ", 
+               "file = sys.argv[1]",
+               "if len(sys.argv) == 2:",
+               "    pushPull.push(file)",
+               "else:",
+               "    pushPull.push(file, sys.argv[2])")
+    fName = file.path(home, "pull.py")
+    rtn = try(write(pullPy, fName), silent=TRUE)
+    if (is(rtn, "try-error")) {
+      cat("could not write ", fName, ": ", str(attr(rtn, "CONDITION")))
+      warning("R pull() may not work")
+    }
+    rtn = try(system(paste0("chmod u+x ", fName)), silent=TRUE)
+    cat("could not chmod to 'u+x' ", fName, ": ", str(attr(rtn, "CONDITION")))
+    warning("R pull() may not work")
+
+    fName = file.path(home, "push.py")
+    rtn = try(write(pushPy, fName), silent=TRUE)
+    if (is(rtn, "try-error")) {
+      cat("could not write ", fName, ": ", str(attr(rtn, "CONDITION")))
+      warning("R push() may not work")
+    }
+    rtn = try(system(paste0("chmod u+x ", fName)), silent=TRUE)
+    cat("could not chmod to 'u+x' ", fName, ": ", str(attr(rtn, "CONDITION")))
+    warning("R push() may not work")
+  } # end push/pull scripts
+  
   # Report success
   cat("Successfully wrote setup.csv and pushPull.R to", rHome, "\n")
   if (home != rHome) {
@@ -282,3 +351,30 @@ setup = function() {
   invisible(NULL)
 }
 
+
+
+## pull.py
+# #!/Users/hseltman/anaconda/bin/python
+# # This is pull.py from https://github.com/hseltman/pushPull
+# 
+# import pushPull
+# import sys
+# 
+# file = sys.argv[1]
+# pushPull.pull(file)
+
+
+## push.py
+# #!/Users/hseltman/anaconda/bin/python
+# # This is push.py from https://github.com/hseltman/pushPull
+# 
+# import pushPull
+# import sys
+# 
+# file = sys.argv[1]
+# if len(sys.argv) == 2:
+#   pushPull.push(file)
+# else:
+#   print(file)
+# print(sys.argv[2])
+# pushPull.push(file, sys.argv[2])
