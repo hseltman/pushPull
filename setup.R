@@ -313,7 +313,10 @@ setup = function() {
                "import sys",
                " ", 
                "file = sys.argv[1]",
-               "pushPull.pull(file)")
+               "if len(sys.argv) == 2:",
+               "    pushPull.pull(file)",
+               "else:",
+               "    pushPull.pull(file, sys.argv[2])")
     pushPy = c("#!/Users/hseltman/anaconda/bin/python",
                "# This is push.py from https://github.com/hseltman/pushPull",
                " ", 
@@ -321,10 +324,7 @@ setup = function() {
                "import sys",
                " ", 
                "file = sys.argv[1]",
-               "if len(sys.argv) == 2:",
-               "    pushPull.push(file)",
-               "else:",
-               "    pushPull.push(file, sys.argv[2])")
+               "pushPull.push(file)")
     pullName = file.path(home, "pull.py")
     rtn = try(write(pullPy, pullName), silent=TRUE)
     if (is(rtn, "try-error")) {
