@@ -97,7 +97,9 @@ setup = function() {
         sftpName = dtf[dtf$key=="sftpName", "value"]
         sftpPassword = dtf[dtf$key=="sftpPassword", "value"]
         userName = dtf[dtf$key=="userName", "value"]
-        if (os == "Darwin") python3Path = dtf[dtf$key=="python3Path", "value"]
+        if (os == "Darwin" && "python3Path" %in% dtf$key) {
+         python3Path = dtf[dtf$key=="python3Path", "value"]
+        }
       } else {
         warning(rSetupFile, " is a csv file, but is missing 'key' and/or 'value'")
       }
@@ -124,7 +126,9 @@ setup = function() {
   sftpPassword = ask("sftp password", sftpPassword)
   userName = ask("Your user name", userName)
   if (os == "Darwin") {
-    if (is.null(python3Path)) python3Path = file.path(home, "anaconda/bin")
+    if (is.null(python3Path) || trimws(python3Path) == "") {
+      python3Path = file.path(home, "anaconda/bin")
+    }
     python3Path = ask("Path to Python 3", python3Path)
   }
   
@@ -310,7 +314,7 @@ setup = function() {
                " ", 
                "file = sys.argv[1]",
                "pushPull.pull(file)")
-    pullPy = c("#!/Users/hseltman/anaconda/bin/python",
+    pushPy = c("#!/Users/hseltman/anaconda/bin/python",
                "# This is push.py from https://github.com/hseltman/pushPull",
                " ", 
                "import pushPull",
@@ -321,25 +325,33 @@ setup = function() {
                "    pushPull.push(file)",
                "else:",
                "    pushPull.push(file, sys.argv[2])")
-    fName = file.path(home, "pull.py")
-    rtn = try(write(pullPy, fName), silent=TRUE)
+    pullName = file.path(home, "pull.py")
+    rtn = try(write(pullPy, pullName), silent=TRUE)
     if (is(rtn, "try-error")) {
-      cat("could not write ", fName, ": ", str(attr(rtn, "CONDITION")))
+      cat("could not write ", pullName, ": ", str(attr(rtn, "CONDITION")))
       warning("R pull() may not work")
+    } else {
+      pullScript= TRUE
+      rtn = system(paste0("chmod u+x ", pullName))
+      if (rtn != 0) {
+        cat("could not chmod to 'u+x' ", pullName)
+        warning("R pull() may not work")
+      }
     }
-    rtn = try(system(paste0("chmod u+x ", fName)), silent=TRUE)
-    cat("could not chmod to 'u+x' ", fName, ": ", str(attr(rtn, "CONDITION")))
-    warning("R pull() may not work")
 
-    fName = file.path(home, "push.py")
-    rtn = try(write(pushPy, fName), silent=TRUE)
+    pushName = file.path(home, "push.py")
+    rtn = try(write(pushPy, pushName), silent=TRUE)
     if (is(rtn, "try-error")) {
-      cat("could not write ", fName, ": ", str(attr(rtn, "CONDITION")))
+      cat("could not write ", pushName, ": ", str(attr(rtn, "CONDITION")))
       warning("R push() may not work")
+    } else {
+      pushScript = TRUE
+      rtn = system(paste0("chmod u+x ", pushName))
+      if (rtn != 0) {
+        cat("could not chmod to 'u+x' ", pushName)
+        warning("R push() may not work")
+      }
     }
-    rtn = try(system(paste0("chmod u+x ", fName)), silent=TRUE)
-    cat("could not chmod to 'u+x' ", fName, ": ", str(attr(rtn, "CONDITION")))
-    warning("R push() may not work")
   } # end push/pull scripts
   
   # Report success
@@ -348,33 +360,7 @@ setup = function() {
     cat("Successfully wrote setup.csv to", home, "\n")
   }
   cat("Successfully wrote pushPull.py to", home, "\n")
+  if (pushScript) cat("Successfully wrote", pushName) 
+  if (pullScript) cat("Successfully wrote", pullName) 
   invisible(NULL)
 }
-
-
-
-## pull.py
-# #!/Users/hseltman/anaconda/bin/python
-# # This is pull.py from https://github.com/hseltman/pushPull
-# 
-# import pushPull
-# import sys
-# 
-# file = sys.argv[1]
-# pushPull.pull(file)
-
-
-## push.py
-# #!/Users/hseltman/anaconda/bin/python
-# # This is push.py from https://github.com/hseltman/pushPull
-# 
-# import pushPull
-# import sys
-# 
-# file = sys.argv[1]
-# if len(sys.argv) == 2:
-#   pushPull.push(file)
-# else:
-#   print(file)
-# print(sys.argv[2])
-# pushPull.push(file, sys.argv[2])
