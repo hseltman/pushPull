@@ -1,10 +1,12 @@
 """
+This is part of https://github.com/hseltman/pushPull
 pushPull.py is the Python version of pushPull.R
 See pushPull.R and setup.R for a full overview.
 
 Python details:
-One time install: From the operating system prompt run either
-  'conda install -c conda-forge pysftp' or 'pip install pysftp',
+One time install: From the operating system prompt run
+  'conda install -c conda-forge pysftp'.
+  If that fails, try 'pip install pysftp'.
 
 Reference: http://pysftp.readthedocs.io/en/release_0.2.9/cookbook.html
            #pysftp-connection-cd
@@ -163,7 +165,9 @@ def pull(files, who=None):
               ", ".join([n for (m, n) in zip(missing, needed) if m]))
 
     # Handle the fact that it is possible that a named folder
-    # rather that the starting folder is the first writeable folder.
+    # rather that the starting folder is the first writeable folder
+    # on the sftp server.  E.g., 'sftpSite' might be 'a.b.c.edu/base', where
+    # we need to cd to 'base' to use sftp.
     split = os.path.split(config['sftpSite'])
     if len(split[0]) == 0:
         site = split[1]
@@ -193,12 +197,20 @@ def pull(files, who=None):
         print("Bad username or password in configuration file")
         return "Failure"
 
+    # helper function to convert 'path/file.ext' to 'path/file-user.ext'
+    def addUser(f, user):
+        user = user.strip()
+        if user in ('.', ""):
+            user = "instructor"
+        (root, ext) = os.path.splitext(f)
+        return root + "-" + user + ext
+
     # pull the files
     fail_count = 0
     for f in files:
         if who is None:
             try:
-                sftp.get(f)
+                sftp.get(f, addUser(f, "instructor"))
             except FileNotFoundError:
                 print("'{}' was not found on the server".format(f))
                 fail_count += 1
@@ -210,7 +222,7 @@ def pull(files, who=None):
                     print("'folder {}' is not on the server".format(who))
                     fail_count += 1
                 try:
-                    sftp.get(f)
+                    sftp.get(f, addUser(f, who))
                 except FileNotFoundError:
                     print("'{}' was not found on the server".format(f))
                     fail_count += 1

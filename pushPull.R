@@ -43,7 +43,11 @@
 # push(files="myFile.R") copies 'files' from the user's computer to folder
 #   "userName" in the ftp folder (where 'userName' comes from the config file).
 # pull(files="myFile.R", who=NULL) copies 'files' from the main ftp folder
-#   to the user's computer (or from folder 'who'),
+#   to the working directory of the user's computer, adding "-instructor"
+#   before the extension.  This is the default "student" mode.
+#   When the instructor is pulling from a specific ('who') student folder,
+#   "-myStudent" is added to the file name before the file is stored in the
+#   instructor's working directory.
 
 # References:
 # https://stackoverflow.com/questions/15950396/sftp-get-files-with-r
@@ -129,6 +133,20 @@ pull = function(files, who=NULL) {
     files = paste0(who, "/", files)
   }
 
+  # Helper function to add "-user" to file names
+  addUser = function(f, user) {
+    if (is.null(user)) user = "."
+    user = trimws(user)
+    if (user %in% c("", ".")) user="instructor"
+    f = strsplit(f, "[.]")[[1]]
+    len = length(f)
+    if (len == 1) return(paste0(f, "-", user))
+    if (len > 2) {
+      f = c(paste(f[1:(len-1)], collapse="."), f[len])
+    }
+    return(paste0(f[1], "-", user, ".", f[2]))
+  }
+  
   # Download files
   if (!require(RCurl, quietly=TRUE, warn.conflicts=FALSE))
     stop("install 'RCurl' and try again")
@@ -142,7 +160,7 @@ pull = function(files, who=NULL) {
       cat("Download of", f, "failed.\n")
       cat("Message:", as.character(attr(rtn, "condition")))
     } else {
-      fLocal = basename(f)
+      fLocal = addUser(basename(f), who)
       rtn = try(write(rtn, fLocal), silent=TRUE)
       if (is(rtn, "try-error")) {
         cat("Download of", fLocal, "succeeded, but save to", getwd(), "failed.\n")
