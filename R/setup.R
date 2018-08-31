@@ -12,7 +12,7 @@
 #' @export
 
 setup <- function() {
-  userSftpInfo = options("userSftpInfo")
+  userSftpInfo = getOption("pushPullInfo")
   if (is.null(userSftpInfo)) {
     sftpSite <- NULL
     sftpName <- NULL
@@ -33,7 +33,7 @@ setup <- function() {
   userSftpInfo <- c(sftpSite, sftpName, sftpPassword, userName)
   names(userSftpInfo) <- c("sftpSite", "sftpName", "sftpPassword", "userName")
   
-  options(userSftpInfo=userSftpInfo)
+  options(pushPullInfo=userSftpInfo)
   write(file.path("~", "pushPullInfo.txt"), userSftpInfo)
   invisible(NULL)
 }

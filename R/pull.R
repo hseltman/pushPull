@@ -32,7 +32,7 @@
 pull <- function(files, who = NULL) {
   if (length(files) == 0 || !is.character(files))
     stop("'files' must be a string vector")
-  userSftpInfo <- options("userSftpInfo")
+  userSftpInfo <- getOption("pushPullInfo")
   if (is.null(userSftpInfo)) {
     stop("run 'setup()'")
   }

@@ -13,5 +13,5 @@
 }
 
 .onAttach <- function(libname, pkgname){
-  if (is.null(options("pushPullInfo"))) packageStartupMessage("run setup()")
+  if (is.null(getOption("pushPullInfo"))) packageStartupMessage("run setup()")
 }
