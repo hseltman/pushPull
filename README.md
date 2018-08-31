@@ -6,11 +6,11 @@ This tool allows easy sharing of code between students and teachers, on the fly,
 You must first setup the sftp server and know its URL, sftp login name,
 and password.
 
-To install run (in R/RStudio):
+To install run (in R/RStudio, as an administrator):
   library(devtools)
   install_git("git://github.com/hseltman/pushPull")
 
-First time usage (in R/RStudio):
+First time usage (in R/RStudio, as an administrator):
   library(pushPull)
   sftpSetup() # Then enter URL, login name, sftp login name, and username
 
