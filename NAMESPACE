@@ -2,5 +2,5 @@
 
 export(pull)
 export(push)
-export(setup)
+export(sftpSetup)
 importFrom(methods,is)
