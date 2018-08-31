@@ -1,0 +1,15 @@
+Package: pushPull
+Type: Package
+Title: A Tool to Share R Code
+Version: 0.1.0
+Author: Francis R. Kovacs, Howard J. Seltman
+Maintainer: Howard J. Seltman <hseltman@andrew.cmu.edu>
+Description: A package that allows students to push and pull information from a 
+    pre-configured sftp server.
+License: GPL-3
+Encoding: UTF-8
+LazyData: false
+Depends: R (>= 3.0.0)
+Imports: methods, RCurl
+RoxygenNote: 6.1.0
+NeedsCompilation: no
