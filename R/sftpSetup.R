@@ -35,7 +35,7 @@ sftpSetup <- function() {
   
   options(pushPullInfo=userSftpInfo)
   packageFolder = system.file(package="pushPull")
-  write(file.path(packageFolder, "pushPullInfo.txt"), userSftpInfo)
+  write(userSftpInfo, file=file.path(packageFolder, "pushPullInfo.txt"))
   invisible(NULL)
 }
 
