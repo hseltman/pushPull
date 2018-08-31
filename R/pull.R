@@ -58,8 +58,6 @@ pull <- function(files, who = NULL) {
   }
   
   # Download files
-  front <- paste0("sftp://", userSftpInfo[["sftpName"]], ":",
-                  userSftpInfo[["sftpPassword"]], "@", userSftpInfo[["sftpSite"]])
   opts <- list(ftp.create.missing.dirs=TRUE)
   for (f in files) {
     url <- paste0("sftp://", userSftpInfo[["sftpSite"]], "/", f)
@@ -70,7 +68,7 @@ pull <- function(files, who = NULL) {
       cat("Message:", as.character(attr(rtn, "condition")))
     } else {
       fLocal <- addUser(basename(f), who)
-      rtn <- try(write(rtn, fLocal), silent=TRUE)
+      rtn <- try(write(rtn, file=fLocal), silent=TRUE)
       if (is(rtn, "try-error")) {
         cat("Download of", fLocal, "succeeded, but save to", getwd(), "failed.\n")
         cat("Message:", as.character(attr(rtn, "condition")))

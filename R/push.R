@@ -46,7 +46,6 @@ push <- function(files) {
   opts = list(ftp.create.missing.dirs=TRUE)
   for (f in files) {
     fRemote = file.path(userSftpInfo[["userName"]], basename(f))
-    print(file.path(front, fRemote))
     rtn = try(RCurl::ftpUpload(f, file.path(front, fRemote), .opts=opts), silent=TRUE)
     if (methods::is(rtn, "try-error")) {
       cat("Upload of", f, "failed.\n")
@@ -56,5 +55,3 @@ push <- function(files) {
 
   invisible(NULL)
 }
-
-
