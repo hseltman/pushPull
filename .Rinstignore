@@ -1,0 +1,13 @@
+# R stuff
+pushPull.Rproj
+.Rhistory
+.RData
+
+# Git license
+LICENSE
+
+# Other
+old/*
+_pycache_/*
+.spyproject/*
+
