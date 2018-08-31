@@ -12,7 +12,7 @@
 #' @export
 
 setup <- function() {
-  userSftpInfo = .pkgenv[["userSftpInfo"]]
+  userSftpInfo = options("userSftpInfo")
   if (is.null(userSftpInfo)) {
     sftpSite <- NULL
     sftpName <- NULL
@@ -33,12 +33,8 @@ setup <- function() {
   userSftpInfo <- c(sftpSite, sftpName, sftpPassword, userName)
   names(userSftpInfo) <- c("sftpSite", "sftpName", "sftpPassword", "userName")
   
-  .pkgenv[["gsl_cflags"]] <<- userSftpInfo
+  options(userSftpInfo=userSftpInfo)
   write(file.path("~", "pushPullInfo.txt"), userSftpInfo)
-  # @importFrom devtools use_data
-  #suppressMessages(use_data(userSftpInfo, 
-  #                 internal = TRUE, 
-  #                 overwrite = TRUE))
   invisible(NULL)
 }
 

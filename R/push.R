@@ -25,7 +25,7 @@
 push <- function(files) {
   if (length(files) == 0 || !is.character(files))
     stop("'files' must be a string vector")
-  userSftpInfo = .pkgenv[["userSftpInfo"]]
+  userSftpInfo = options("userSftpInfo")
   if (is.null(userSftpInfo)) {
     stop("run 'setup()'")
   }
