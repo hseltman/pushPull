@@ -22,14 +22,14 @@ General usage (in R/Rstudio)
   # by a teacher to upload "ex1.R"
   push("ex1.R")
   
-  # by a student to download copy of "ex1.R"
+  # by a student to download copy of "ex1.R" called "ex1-instructor.R"
   pull("ex1.R")
   
-  # by a student to upload a revised "ex1.R"
-  push("ex1.R") # goes into sftp folder named by students username
+  # by a student to upload a revised "ex1-instructor.R"
+  push("ex2.R") # goes into sftp folder named by students username
   
   # by a teacher to download "ex1.R" from student "obama"
-  pull("ex1.R", "obama"")
+  pull("ex2.R", "obama"") # called "ex2-instructor.R"
   
   
 Instructions for creating the package on a clone of this git, starting
