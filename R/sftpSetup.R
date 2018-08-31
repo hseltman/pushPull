@@ -11,7 +11,7 @@
 #' @author Howard J. Seltman \email{hseltman@@stat.cmu.edu} and Francis R. Kovacs
 #' @export
 
-setup <- function() {
+sftpSetup <- function() {
   userSftpInfo = getOption("pushPullInfo")
   if (is.null(userSftpInfo)) {
     sftpSite <- NULL
@@ -34,7 +34,8 @@ setup <- function() {
   names(userSftpInfo) <- c("sftpSite", "sftpName", "sftpPassword", "userName")
   
   options(pushPullInfo=userSftpInfo)
-  write(file.path("~", "pushPullInfo.txt"), userSftpInfo)
+  packageFolder = system.file(package="pushPull")
+  write(file.path(packageFolder, "pushPullInfo.txt"), userSftpInfo)
   invisible(NULL)
 }
 
