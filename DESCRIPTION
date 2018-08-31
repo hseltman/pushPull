@@ -6,7 +6,7 @@ Author: Francis R. Kovacs, Howard J. Seltman
 Maintainer: Howard J. Seltman <hseltman@andrew.cmu.edu>
 Description: A package that allows students to push and pull information from a 
     pre-configured sftp server.
-License: GPL-3
+License: file LICENSE
 Encoding: UTF-8
 LazyData: false
 Depends: R (>= 3.0.0)
