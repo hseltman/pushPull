@@ -36,6 +36,7 @@ pull <- function(files, who = NULL) {
   if (is.null(userSftpInfo)) {
     stop("run 'setup()'")
   }
+  if (userSftpInfo["userName"] != ".") who = NULL
   
   # Fixup files (subdirectories must be through "who")
   files <- basename(files)
@@ -43,35 +44,34 @@ pull <- function(files, who = NULL) {
     files <- paste0(who, "/", files)
   }
   
-  # Helper function to add "-user" to file names
-  addUser <- function(f, user) {
-    if (is.null(user)) user <- "."
-    user <- trimws(user)
-    if (user %in% c("", ".")) user="instructor"
-    f <- strsplit(f, "[.]")[[1]]
-    len <- length(f)
-    if (len == 1) return(paste0(f, "-", user))
-    if (len > 2) {
-      f <- c(paste(f[1:(len-1)], collapse="."), f[len])
-    }
-    return(paste0(f[1], "-", user, ".", f[2]))
-  }
-  
+
   # Download files
   opts <- list(ftp.create.missing.dirs=TRUE)
   for (f in files) {
-    url <- paste0("sftp://", userSftpInfo[["sftpSite"]], "/", f)
-    userpwd <- paste0(userSftpInfo[["sftpName"]], ":", userSftpInfo[["sftpPassword"]])
-    rtn <- try(RCurl::getURL(url, userpwd=userpwd), silent=TRUE)
-    if (methods::is(rtn, "try-error")) {
-      cat("Download of", f, "failed.\n")
-      cat("Message:", as.character(attr(rtn, "condition")))
+    outF = f
+    if (file.exists(f)) {
+      ow = ask(paste("Overwrite", f, "(y or n)"), default="n")
+      if (toupper(substring(ow, 1, 1) != "Y")) {
+        outExists = TRUE
+        while (outExists) {
+          if (outF == "") break
+          outF = ask("New name (or Enter to skip)")
+          if (outF == "") break
+          outExists = file.exists(outF)
+        }
+      }
+    }
+    url <- paste0("sftp://", userSftpInfo["sftpSite"], "/", f)
+    userpwd <- paste0(userSftpInfo["sftpName"], ":", userSftpInfo["sftpPassword"])
+    fileContents <- try(RCurl::getURL(url, userpwd=userpwd), silent=TRUE)
+    if (methods::is(fileContents, "try-error")) {
+      warning("Download of ", f, " failed.\n",
+             "Message: ", as.character(attr(fileContents, "condition")))
     } else {
-      fLocal <- addUser(basename(f), who)
-      rtn <- try(write(rtn, file=fLocal), silent=TRUE)
+      rtn <- try(write(fileContents, file=outF), silent=TRUE)
       if (is(rtn, "try-error")) {
-        cat("Download of", fLocal, "succeeded, but save to", getwd(), "failed.\n")
-        cat("Message:", as.character(attr(rtn, "condition")))
+        warning("Download of ", outF, " succeeded, but save to ", getwd(), " failed.\n",
+                "Message:", as.character(attr(rtn, "condition")))
       }
     }
   }
