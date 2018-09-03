@@ -155,12 +155,12 @@ rm -rf $libssh2Folder* $curlFolder*
 # Final check
 echo " "
 echo "Examine this result:"
-curl -V
+/usr/local/bin/curl -V
 echo "If you do not see \"sftp\" listed, something is wrong, and"
 echo "you need to ask for help."
 echo " "
 echo "If you see \"sftp\", carry out this final step in R:
-echo "install.packages(\"RCurl\", type =\"source\")"
+echo 'install.packages("RCurl", type ="source")'
 
 
 echo "Successful! :)"
