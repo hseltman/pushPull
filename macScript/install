@@ -3,9 +3,24 @@
 # and install that into libssh2 according to
 # http://andrewberls.com/blog/post/adding-sftp-support-to-curl
 
-# Run this script in Mac "terminal".  It is best to make a
+# Run this script in your Mac "terminal".  It is best to make a
 # new folder with "mkdir setupPushPull" and "cd setupPushPull".
 # Place this file in the folder and run with "bash install".
+
+# Check if curl has sftp
+echo "Checking if your curl already has sftp"
+hassftp=$(/usr/local/bin/curl -V | grep -m1 sftp)
+if [ $? -ne 0 ]; then
+  hassftp=$(/usr/bin/curl -V | grep -m1 sftp)
+fi
+if [ -n "$hassftp" ]; then
+  echo 'Hooray! sftp is already installed in curl on your computer.'
+  echo 'Note that you may still need to run the R command:'
+  echo 'install.packages("RCurl", type="source")'
+  echo 'before installing "pushPull".'
+  exit 1
+fi
+echo "We need to load curl with sftp."
 
 # Check if brew is installed
 echo "Checking if Homebrew is installed"
@@ -104,7 +119,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 curl=$(egrep -m1 "curl-\\d{1,2}[.]" $tempFile | cut -f4 -d\")
-if [ $? -ne 0 ] || [ -z $curl ]; then
+if [ $? -ne 0 ] || [ -z "$curl" ]; then
   echo "Cannot find latest version of curl"
   rm $tempFile
   exit 1
