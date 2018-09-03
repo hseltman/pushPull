@@ -8,39 +8,35 @@ and password.
 
 To install run (in R/RStudio, as an administrator):
   library(devtools)
-  install_git("git://github.com/hseltman/pushPull")
+  install_github("hseltman/pushPull")
+
+On a Mac, sftp is likely to not be supported in curl, and hence RCurl.
+To fix this, run "terminal", create a new directory and change in to it,
+then download the "install" script, e.g., with
+curl -o install https://raw.githubusercontent.com/hseltman/pushPull/master/macScript/install
+Run the script ("bash install").
 
 First time usage (in R/RStudio, as an administrator):
   library(pushPull)
   sftpSetup() # Then enter URL, login name, sftp login name, and username
 
 The username is any unique string that can be a directory name, e.g.,
-the basename of the students unique assigned email name.
+the basename of the students unique assigned University email name.
 
 General usage (in R/Rstudio)
-  library(pushPull)
-  # by a teacher to upload "ex1.R"
-  push("ex1.R")
-  
-  # by a student to download copy of "ex1.R" called "ex1-instructor.R"
+  # Student wants a copy of the instructor's "ex1.R"
   pull("ex1.R")
   
-  # by a student to upload a revised "ex1-instructor.R"
-  push("ex2.R") # goes into sftp folder named by students username
-  
-  # by a teacher to download "ex1.R" from student "obama"
-  pull("ex2.R", "obama"") # called "ex2-instructor.R"
-  
-  
+  # Student wants to upload their revised veersion of "ex1.R" (perhaps
+  # because the student added code that generated errors)
+  push("ex2.R")
+
 Instructions for creating the package on a clone of this git, starting
 in the folder above "pushPull" at a command prompt:
+  R -e 'setwd("pushPull");library(devtools);document()'
   R CMD build pushPull
-  R CMD check pushPull_0.1.0.tar.gz
-  R -e setwd('pushPull');library(devtools);document()
+  R CMD check pushPull_x.x.x.tar.gz
   R CMD BUILD pushPull
   
 Substitute the current version informstion in the "check".
-The package is in the tar.gz file.
-
-  
-  
+The new package will be in the new tar.gz file.
