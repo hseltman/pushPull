@@ -1,0 +1,167 @@
+#!/bin/bash
+# For gitub.com/hseltman/pushPull, install curl with sftp support on a Mac,
+# and install that into libssh2 according to
+# http://andrewberls.com/blog/post/adding-sftp-support-to-curl
+
+# Run this script in Mac "terminal".  It is best to make a
+# new folder with "mkdir setupPushPull" and "cd setupPushPull".
+# Place this file in the folder and run with "bash install".
+
+# Check if brew is installed
+echo "Checking if Homebrew is installed"
+msg=$(brew -v 2> /dev/null)
+if [ $? -ne 0 ]; then
+  echo "Installing Homebrew (requires your Mac password)"
+  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  if [ $? -ne 0 ]; then
+    echo "Cannot install Homebrew"
+    exit 1
+  fi
+else
+  echo "Homewbrew is already installed"
+fi
+
+
+# libssh2 requires "crypto" library
+# Install libgcrypt (needed by libssl2)
+echo "Checking for libgcrypt"
+cryptLoc=$(which openssl)
+if [ -z $(ls /usr/local/lib/libgcrypt*) ]; then
+  echo "Installing libgcrypt"
+  brew update
+  if [ $? -ne 0 ]; then
+    echo brew update failed
+    exit 1
+  fi
+  brew install libgcrypt
+  if [ $? -ne 0 ]; then
+    echo "brew install libgcrypt failed"
+    exit 1
+  fi
+else
+  echo "libgcrypt already installed"
+fi
+
+
+# Find the latest version of libssh2 from https://www.libssh2.org
+echo "Checking libssh2 web page for lastest version"
+libssh2=$(curl https://www.libssh2.org | grep "latest release" | cut -f2 -d\")
+if [ $? -ne 0 ] || [ ${#libssh2} -lt 29 ] || [ ${#libssh2} -gt 31 ]; then
+   echo "Finding lastest version of libssh2 from www.libssh2.org/index.html failed"
+   echo "(Looking for a single \"latest release\" string with a quoted URL.)"
+   exit 1
+fi
+echo "Setting libssh2 URL to $libssh2"
+
+# Download and install libssh2
+# (Remove path to get basename, then .gz and .tar to get folder of libssh2)
+libssh2Base=$(basename $libssh2) 
+libssh2Folder=${libssh2Base%.*}
+libssh2Folder=${libssh2Folder%.*}
+echo "Downloading $libssh2Base"
+curl -O https://www.libssh2.org/$libssh2
+if [ $? -ne 0 ]; then
+  echo "Could not download $libssh2"
+  exit 1
+fi
+echo "Unzipping $libssh2Base"
+tar -xf $libssh2Base
+if [ $? -ne 0 ]; then
+  echo "Could not unzip $libssh2Base"
+  exit 1
+fi
+cd ${libssh2Folder}/
+echo "Configuring makefile for libssh2"
+./configure --with-libgcrypt=/usr/local
+if [ $? -ne 0 ]; then
+  echo "Could not configure makefile for libssh2"
+  exit 1
+fi
+
+echo "Running make for libssh2"
+make
+if [ $? -ne 0 ]; then
+  echo "Could not make libssh2"
+  echo "Consider trying again with XCode installed"
+  exit 1
+fi
+
+echo "Installing libssh2"
+make install
+if [ $? -ne 0 ]; then
+  echo "Could not install libssh2"
+  exit 1
+fi
+cd ..
+
+# Install curl
+# Find the latest version of curl at https://curl.haxx.se/download.html
+echo "Checking curl.haxx.se web page for lastest version"
+tempFile=$(mktemp /tmp/curlTempXXXX)
+curl -o$tempFile https://curl.haxx.se/download.html
+if [ $? -ne 0 ]; then
+  echo "Cannot download https://curlhaxx.se/download.html"
+  exit 1
+fi
+curl=$(egrep -m1 "curl-\\d{1,2}[.]" $tempFile | cut -f4 -d\")
+if [ $? -ne 0 ] || [ -z $curl ]; then
+  echo "Cannot find latest version of curl"
+  rm $tempFile
+  exit 1
+fi
+rm $tempFile
+
+echo "Setting url URL to $curl"
+# (Remove path to get basename, then .gz and .tar to get folder of curl)
+curlBase=$(basename $curl)
+curlFolder=${curlBase%.*}
+curlFolder=${curlFolder%.*}
+echo "Downloading $curlBase"
+curl -o $curlBase https://curl.haxx.se$curl
+if [ $? -ne 0 ]; then
+  echo "Could not download https://curl.haxx.se$curl"
+  exit 1
+fi
+tar -xf $curlBase
+if [ $? -ne 0 ];then
+  echo "Could not untar $curl"
+  exit 1
+fi
+
+cd $curlFolder
+echo "Configuring for making curl"
+./configure --with-libssh2=/usr/local
+if [ $? -ne 0 ]; then
+  echo "Could not configure for making curl"
+  exit 1
+fi
+echo "Making curl"
+make
+if [ $? -ne 0 ]; then
+  echo "Could not make curl"
+  exit 1
+fi
+echo "Installing curl"
+make install
+if [ $? -ne 0 ]; then
+  echo "Could not install curl"
+  exit 1
+fi
+cd ..
+
+# Cleaning up
+rm -rf $libssh2Folder* $curlFolder*
+
+# Final check
+echo " "
+echo "Examine this result:"
+curl -V
+echo "If you do not see \"sftp\" listed, something is wrong, and"
+echo "you need to ask for help."
+echo " "
+echo "If you see \"sftp\", carry out this final step in R:
+echo "install.packages(\"RCurl\", type =\"source\")"
+
+
+echo "Successful! :)"
+
