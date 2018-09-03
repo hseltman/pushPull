@@ -1,24 +1,15 @@
 #' Pull Files from an Sftp Server
 #'
 #' Pull one or more files from the main sftp folder into the
-#' working directory.  If \code{"who"} is used, the file is
-#' read from that subfolder.
+#' working directory.
 #' 
-#' Students use push(files) to upload file(s) from their computer to
-#' the sftp site in their folder (as specified by their setup user name).
-#' Typically one or more files in the current folder are specified, but
-#' relative and absolute locations are allowed.
-#' Students use pull(files) to download files to their current folder
-#' from the root folder of the ftp site.
-#' 
-#' Teachers use push(files) to upload file(s) from their computer to the
-#' sftp site's root folder (by specifying user name ".").
-#' Teachers use pull(files, who="studentUserId") to download one or more
-#' student files to their current folder.
+#' Students use pull(files) to download file(s) to their computer from
+#' the sftp site.  One or more files can specified.  Files are loaded to the
+#' student's working directory.  If the file already exists the user is
+#' asked if s(he) wants to overwrite the old file.  If "n"o is chosen,
+#' the user is asked for a new file name.
 #' 
 #' @param files a character vector containing the files to be loaded
-#' @param who a length-1 character vector specifying the folder on
-#'   the sftp server from which the file is read
 #'
 #' @return None
 #'
@@ -29,26 +20,22 @@
 #' https://jonkimanalyze.wordpress.com/2014/11/20/r-quick-sftp-file-transfer/
 #' @export
 
-pull <- function(files, who = NULL) {
+pull <- function(files) {
+  # Check input and restrict to root directory of the sftp server
   if (length(files) == 0 || !is.character(files))
     stop("'files' must be a string vector")
+  files <- basename(files)
+  
+  # Get user/site-specific stored sftp info
   userSftpInfo <- getOption("pushPullInfo")
   if (is.null(userSftpInfo)) {
-    stop("run 'setup()'")
+    stop("run 'sftpSetup()'")
   }
-  if (userSftpInfo["userName"] != ".") who = NULL
-  
-  # Fixup files (subdirectories must be through "who")
-  files <- basename(files)
-  if (!is.null(who)) {
-    files <- paste0(who, "/", files)
-  }
-  
 
-  # Download files
-  opts <- list(ftp.create.missing.dirs=TRUE)
+  # Download each file
   for (f in files) {
     outF = f
+    # Prevent file overwrite unless user agrees
     if (file.exists(f)) {
       ow = ask(paste("Overwrite", f, "(y or n)"), default="n")
       if (toupper(substring(ow, 1, 1) != "Y")) {
@@ -61,6 +48,7 @@ pull <- function(files, who = NULL) {
         }
       }
     }
+    # Perform actual download
     url <- paste0("sftp://", userSftpInfo["sftpSite"], "/", f)
     userpwd <- paste0(userSftpInfo["sftpName"], ":", userSftpInfo["sftpPassword"])
     fileContents <- try(RCurl::getURL(url, userpwd=userpwd), silent=TRUE)
@@ -68,6 +56,7 @@ pull <- function(files, who = NULL) {
       warning("Download of ", f, " failed.\n",
              "Message: ", as.character(attr(fileContents, "condition")))
     } else {
+      # Write downloaded text to the output file
       rtn <- try(write(fileContents, file=outF), silent=TRUE)
       if (is(rtn, "try-error")) {
         warning("Download of ", outF, " succeeded, but save to ", getwd(), " failed.\n",

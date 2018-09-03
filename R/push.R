@@ -1,13 +1,7 @@
 #' Push Files to an Sftp Server
 #'
-#' Push one or more files from to the student's sftp folder from the
-#' working directory.
-#' 
-#' Students use push(files) to upload file(s) from their working folder
-#' to the folder matching their user name on the sftp site.
-#' 
-#' Teachers use push(files) to upload file(s) from their working folder
-#' to the sftp site's root folder (by specifying user name ".").
+#' Push one or more files from to the student's working directory (or any
+#' other student director) to the student's directory on the sftp server.
 #' 
 #' @param files a character vector containing the files to be uploaded.
 #'
@@ -23,11 +17,14 @@
 
 
 push <- function(files) {
+  # Check input
   if (length(files) == 0 || !is.character(files))
     stop("'files' must be a string vector")
+  
+  # Get stored user/site-specific sftp info
   userSftpInfo = getOption("pushPullInfo")
   if (is.null(userSftpInfo)) {
-    stop("run 'setup()'")
+    stop("run 'sftpSetup()'")
   }
 
   # Check files
@@ -40,7 +37,7 @@ push <- function(files) {
     stop("folder not file: ", paste(files[fid], collapse=", "))
   }
   
-  # Upload files
+  # Upload each file
   front = paste0("sftp://", userSftpInfo[["sftpName"]], ":",
                  userSftpInfo[["sftpPassword"]], "@", userSftpInfo[["sftpSite"]])
   opts = list(ftp.create.missing.dirs=TRUE)
