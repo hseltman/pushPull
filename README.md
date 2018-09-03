@@ -3,18 +3,18 @@ An educational tool for classrooms where coding is being taught.
 
 This tool allows easy sharing of code between students and teachers, on the fly, via a common sftp account.
 
-You must first setup the sftp server and know its URL, sftp login name,
+It is assumed that an sftp server has been set up and you know its URL, sftp login name,
 and password.
-
-To install run (in R/RStudio, as an administrator):
-  library(devtools)
-  install_github("hseltman/pushPull")
 
 On a Mac, sftp is likely to not be supported in curl, and hence RCurl.
 To fix this, run "terminal", create a new directory and change in to it,
 then download the "install" script, e.g., with
 curl -o install https://raw.githubusercontent.com/hseltman/pushPull/master/macScript/install
 Run the script ("bash install").
+
+To install run (in R/RStudio, as an administrator):
+  library(devtools)
+  install_github("hseltman/pushPull")
 
 First time usage (in R/RStudio, as an administrator):
   library(pushPull)
