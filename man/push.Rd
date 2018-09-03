@@ -13,15 +13,8 @@ push(files)
 None
 }
 \description{
-Push one or more files from to the student's sftp folder from the
-working directory.
-}
-\details{
-Students use push(files) to upload file(s) from their working folder
-to the folder matching their user name on the sftp site.
-
-Teachers use push(files) to upload file(s) from their working folder
-to the sftp site's root folder (by specifying user name ".").
+Push one or more files from to the student's working directory (or any
+other student director) to the student's directory on the sftp server.
 }
 \references{
 https://stackoverflow.com/questions/15950396/sftp-get-files-with-r

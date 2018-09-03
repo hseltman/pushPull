@@ -4,34 +4,24 @@
 \alias{pull}
 \title{Pull Files from an Sftp Server}
 \usage{
-pull(files, who = NULL)
+pull(files)
 }
 \arguments{
 \item{files}{a character vector containing the files to be loaded}
-
-\item{who}{a length-1 character vector specifying the folder on
-the sftp server from which the file is read}
 }
 \value{
 None
 }
 \description{
 Pull one or more files from the main sftp folder into the
-working directory.  If \code{"who"} is used, the file is
-read from that subfolder.
+working directory.
 }
 \details{
-Students use push(files) to upload file(s) from their computer to
-the sftp site in their folder (as specified by their setup user name).
-Typically one or more files in the current folder are specified, but
-relative and absolute locations are allowed.
-Students use pull(files) to download files to their current folder
-from the root folder of the ftp site.
-
-Teachers use push(files) to upload file(s) from their computer to the
-sftp site's root folder (by specifying user name ".").
-Teachers use pull(files, who="studentUserId") to download one or more
-student files to their current folder.
+Students use pull(files) to download file(s) to their computer from
+the sftp site.  One or more files can specified.  Files are loaded to the
+student's working directory.  If the file already exists the user is
+asked if s(he) wants to overwrite the old file.  If "n"o is chosen,
+the user is asked for a new file name.
 }
 \references{
 https://stackoverflow.com/questions/15950396/sftp-get-files-with-r
