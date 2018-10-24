@@ -38,7 +38,8 @@ pull <- function(files) {
     # Prevent file overwrite unless user agrees
     if (file.exists(f)) {
       ow = ask(paste("Overwrite", f, "(y or n)"), default="n")
-      if (toupper(substring(ow, 1, 1) != "Y")) {
+      if (toupper(substring(ow, 1, 1)) != "Y") {
+        browser()
         outExists = TRUE
         while (outExists) {
           if (outF == "") break
