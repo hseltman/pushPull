@@ -46,7 +46,7 @@ in the folder above "pushPull" at a command prompt:
 
   R CMD check pushPull_x.x.x.tar.gz
 
-  R CMD BUILD pushPull
+  R CMD build pushPull
   
 Substitute the current version information in the "check".
 
