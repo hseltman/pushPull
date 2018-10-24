@@ -35,7 +35,7 @@ sftpSetup <- function() {
     sftpSite <- userSftpInfo[["sftpSite"]]
     sftpName <- userSftpInfo[["sftpName"]]
     sftpPassword <- userSftpInfo[["sftpPassword"]]
-    userName <- userSftpInfo[["sftpName"]]
+    userName <- userSftpInfo[["userName"]]
   }
   sftpSite <- ask("sftp site [not including sftp://]", sftpSite)
   sftpName <- ask("sftp login name", sftpName)
