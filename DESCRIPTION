@@ -1,7 +1,7 @@
 Package: pushPull
 Type: Package
 Title: A Tool to Share R Code in Class
-Version: 0.2.0
+Version: 0.2.1
 Author: Francis R. Kovacs, Howard J. Seltman
 Maintainer: Howard J. Seltman <hseltman@andrew.cmu.edu>
 Description: A package that allows students to push and pull information from a 
